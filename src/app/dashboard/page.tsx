@@ -1,3 +1,5 @@
+"use client"
+
 import { useSession, signOut } from "next-auth/react";
 import DashboardCard from "../components/DashboardCard";
 import Button from "../components/Button";
