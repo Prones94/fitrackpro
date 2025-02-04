@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Workout {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  name      String
+  reps      Int
+  sets      Int
+  weight    Float?
+  duration  Int?
+  createdAt DateTime @default(now())
+}
