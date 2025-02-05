@@ -3,34 +3,45 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(){
+// ✅ GET: Fetch all workouts
+export async function GET() {
   try {
-    const workouts = await prisma.workout.findMany()
+    console.log("Fetching workouts...");
+    const workouts = await prisma.workout.findMany();
+    return NextResponse.json(workouts.length > 0 ? workouts : []);
+  } catch (error) {
+    console.error("Error fetching workouts:", error);
 
-    return NextResponse.json(workouts.length > 0 ? workouts: [])
-  } catch (err){
-    return NextResponse.json({ error: "Failed to fetch workouts" }, { status: 500 })
+    // ✅ Fix: Ensure error is an instance of `Error`
+    return NextResponse.json(
+      { error: "Failed to fetch workouts", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
   }
 }
 
-// Handle POST request to store a new workout
+// ✅ POST: Handle adding a new workout
 export async function POST(req: Request) {
   try {
     const { userId, name, reps, sets, weight, duration } = await req.json();
 
-    // Validate required fields
     if (!userId || !name || !reps || !sets) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Create a new workout in Supabase via Prisma
     const newWorkout = await prisma.workout.create({
-      data: { userId, name, reps, sets, weight, duration },
+      data: { userId, name, reps, sets, weight: weight ?? null, duration: duration ?? null },
     });
 
     return NextResponse.json(newWorkout, { status: 201 });
 
   } catch (error) {
-    return NextResponse.json({ error: "Failed to add workout" }, { status: 500 });
+    console.error("Error adding workout:", error);
+
+    // ✅ Fix: Ensure error is an instance of `Error`
+    return NextResponse.json(
+      { error: "Failed to add workout", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
   }
 }
