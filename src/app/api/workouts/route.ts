@@ -3,6 +3,16 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+export async function GET(){
+  try {
+    const workouts = await prisma.workout.findMany()
+
+    return NextResponse.json(workouts.length > 0 ? workouts: [])
+  } catch (err){
+    return NextResponse.json({ error: "Failed to fetch workouts" }, { status: 500 })
+  }
+}
+
 // Handle POST request to store a new workout
 export async function POST(req: Request) {
   try {

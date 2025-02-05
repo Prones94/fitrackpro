@@ -88,6 +88,7 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
       <h3 className="text-lg font-semibold">Log a Workout</h3>
       {error && <p className="text-red-500">{error}</p>}
 
+      <label htmlFor="name" className="block text-gray-700 font-medium">Exercise Name</label>
       <input
         type="text"
         placeholder="Exercise Name"
@@ -96,6 +97,8 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
         className="w-full p-2 border rounded"
         required
       />
+
+      <label htmlFor="reps" className="block text-gray-700 font-medium">Rep Range</label>
       <input
         type="number"
         placeholder="Reps"
@@ -104,6 +107,8 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
         className="w-full p-2 border rounded"
         required
       />
+
+      <label htmlFor="sets" className="block text-gray-700 font-medium"># of Sets</label>
       <input
         type="number"
         placeholder="Sets"
@@ -112,8 +117,26 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
         className="w-full p-2 border rounded"
         required
       />
-      <button type="submit" className="bg-blue-600 text-white p-2 rounded w-full">
-        Add Workout
+      <label className="block text-gray-700 font-medium">Weight (Optional, in lbs)</label>
+      <input
+        type="number"
+        placeholder="e.g., 150"
+        value={weight || ""}
+        onChange={(e) => setWeight(Number(e.target.value))}
+        className="w-full p-2 border rounded"
+      />
+
+      <label className="block text-gray-700 font-medium">Rest (Optional, in seconds)</label>
+      <input
+        type="number"
+        placeholder="e.g., 60"
+        value={duration || ""}
+        onChange={(e) => setDuration(Number(e.target.value))}
+        className="w-full p-2 border rounded"
+      />
+
+      <button type="submit" className="bg-blue-600 text-white p-2 rounded w-full" disabled={loading}>
+        {loading ? "Saving..." : "Add Workout"}
       </button>
     </form>
   )
