@@ -1,40 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState, useEffect } from "react";
 
 type Workout = {
   id: number;
   name: string;
   reps: number;
   sets: number;
-}
+  weight?: number;
+  duration?: number;
+};
 
-export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: Workout) => void}) {
-  const [name, setName] = useState("")
-  const [reps, setReps] = useState(0)
-  const [sets, setSets] = useState(0)
-  const [weight, setWeight] = useState<number | undefined>()
-  const [duration, setDuration] = useState<number | undefined>()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+export default function WorkoutForm({
+  onAddWorkout,
+  selectedExercise,
+}: {
+  onAddWorkout: (workout: Workout) => void;
+  selectedExercise: string;
+}) {
+  const [name, setName] = useState("");
+  const [reps, setReps] = useState(0);
+  const [sets, setSets] = useState(0);
+  const [weight, setWeight] = useState<number | undefined>();
+  const [duration, setDuration] = useState<number | undefined>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // ✅ Auto-fill exercise name when an exercise is selected
+  useEffect(() => {
+    if (selectedExercise) {
+      setName(selectedExercise);
+    }
+  }, [selectedExercise]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+
+    // ✅ Input validation to prevent empty submissions
+    if (!name || reps <= 0 || sets <= 0) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
     setLoading(true);
     setError("");
-
-    if (!name || reps <= 0 || sets <= 0){
-      setError("Please fill in all required fields")
-      setLoading(false)
-      return
-    }
 
     try {
       const response = await fetch("/api/workouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: "test-user",
           name,
           reps,
           sets,
@@ -44,51 +59,43 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
       });
 
       if (!response.ok) {
-        throw new Error("Failed to add workout");
+        throw new Error("Failed to add workout.");
       }
 
-      const newWorkout: Workout = {
-        id: Date.now(),
+      // ✅ Extract created workout from API response
+      const savedWorkout = await response.json();
+
+      // ✅ Add workout to state after successful API call
+      onAddWorkout({
+        id: savedWorkout.id ?? Date.now(),
         name,
         reps,
-        sets
-      }
+        sets,
+        weight,
+        duration,
+      });
 
-      onAddWorkout(newWorkout)
+      // ✅ Reset form after submission
       setName("");
       setReps(0);
       setSets(0);
       setWeight(undefined);
       setDuration(undefined);
-
     } catch (err) {
       setError("Error saving workout. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-    if (!name || reps <= 0 || sets <= 0) return
-
-    const newWorkout: Workout = {
-      id: Date.now(),
-      name,
-      reps,
-      sets,
-    }
-
-    onAddWorkout(newWorkout)
-    setName("")
-    setReps(0)
-    setSets(0)
-    setWeight(undefined)
-    setDuration(undefined)
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-4 shadow rounded-lg space-y-4">
       <h3 className="text-lg font-semibold">Log a Workout</h3>
       {error && <p className="text-red-500">{error}</p>}
 
-      <label htmlFor="name" className="block text-gray-700 font-medium">Exercise Name</label>
+      <label htmlFor="name" className="block text-gray-700 font-medium">
+        Exercise Name
+      </label>
       <input
         type="text"
         placeholder="Exercise Name"
@@ -98,7 +105,9 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
         required
       />
 
-      <label htmlFor="reps" className="block text-gray-700 font-medium">Rep Range</label>
+      <label htmlFor="reps" className="block text-gray-700 font-medium">
+        Rep Range
+      </label>
       <input
         type="number"
         placeholder="Reps"
@@ -108,7 +117,9 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
         required
       />
 
-      <label htmlFor="sets" className="block text-gray-700 font-medium"># of Sets</label>
+      <label htmlFor="sets" className="block text-gray-700 font-medium">
+        # of Sets
+      </label>
       <input
         type="number"
         placeholder="Sets"
@@ -117,6 +128,7 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
         className="w-full p-2 border rounded"
         required
       />
+
       <label className="block text-gray-700 font-medium">Weight (Optional, in lbs)</label>
       <input
         type="number"
@@ -139,5 +151,5 @@ export default function WorkoutForm({ onAddWorkout }: { onAddWorkout: (workout: 
         {loading ? "Saving..." : "Add Workout"}
       </button>
     </form>
-  )
+  );
 }
