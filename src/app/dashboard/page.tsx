@@ -1,50 +1,147 @@
-'use client'; // ✅ Ensures this is a Client Component (fixes hydration issues)
+'use client'; // ✅ Ensures this is a Client Component (prevents hydration issues)
 
 import { useState, useEffect } from 'react';
 import DashboardCard from '../components/DashboardCard';
 import Button from '../components/Button';
 import WorkoutForm from '../components/WorkoutForm';
 
+// ✅ Type definitions for Workout and Exercise objects
 type Workout = {
 	id: number;
 	name: string;
 	reps: number;
 	sets: number;
-  weight?: number;
-  duration?: number;
+	weight?: number;
+	duration?: number;
 };
 
-export default function Dashboard() {
-	const [workouts, setWorkouts] = useState<Workout[]>([]); // ✅ Stores workouts fetched from API
-	const [loading, setLoading] = useState(true); // ✅ Default `loading` to `true` to prevent hydration issues
+type Exercise = {
+	id: string;
+	name: string; // ✅ Since the API only returns `id`, we will format it into `name`
+};
 
-	// ✅ Moved `fetchWorkouts` outside of `useEffect` so it can be reused
+function ExerciseSearch({ onSelectExercise }: { onSelectExercise: (exerciseName: string) => void }) {
+	const [exercises, setExercises] = useState<Exercise[]>([]);
+	const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
+	const [search, setSearch] = useState('');
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState('');
+
+	useEffect(() => {
+		async function fetchExercises() {
+			try {
+				setLoading(true);
+				const response = await fetch('/api/exercises');
+
+				if (!response.ok) {
+					throw new Error(`HTTP Error! Status: ${response.status}`);
+				}
+
+				const data = await response.json();
+
+				if (!Array.isArray(data)) {
+					console.error('Unexpected API response:', data);
+					throw new Error('Unexpected API response format');
+				}
+
+				const formattedExercises = data.map((exerciseId) => ({
+					id: exerciseId,
+					name: exerciseId.replace(/_/g, ' '),
+				}));
+
+				setExercises(formattedExercises);
+				setFilteredExercises(formattedExercises);
+			} catch (err) {
+				console.error('Failed to fetch exercises:', err);
+				setError('Failed to load exercises. Please try again.');
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		fetchExercises();
+	}, []);
+
+	useEffect(() => {
+		if (!search) {
+			setFilteredExercises(exercises);
+		} else {
+			setFilteredExercises(
+				exercises.filter((exercise) =>
+					exercise.name.toLowerCase().includes(search.toLowerCase())
+				)
+			);
+		}
+	}, [search, exercises]);
+
+	if (loading) return <p>Loading exercises...</p>;
+	if (error) return <p className='text-red-500'>{error}</p>;
+
+	return (
+		<div className='p-6'>
+			<h2 className='text-xl font-bold'>Exercises</h2>
+
+			<input
+				type='text'
+				placeholder='Search for an exercise...'
+				value={search}
+				onChange={(e) => setSearch(e.target.value)}
+				className='border p-2 w-full mb-4'
+			/>
+
+			<div className='overflow-y-auto max-h-[350px] border p-4 rounded-lg shadow-md'>
+				{filteredExercises.length === 0 ? (
+					<p className='text-gray-500'>No exercises found.</p>
+				) : (
+					<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+						{filteredExercises.map((exercise) => (
+							<div
+								key={exercise.id}
+								className='p-3 bg-white shadow rounded-lg'
+								onClick={() => onSelectExercise(exercise.name)}
+							>
+								<strong>{exercise.name}</strong>
+							</div>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+export default function Dashboard() {
+	// ✅ State for workouts
+	const [workouts, setWorkouts] = useState<Workout[]>([]);
+	const [selectedExercise, setSelectedExercise] = useState('');
+	const [loading, setLoading] = useState(true);
+
+	// ✅ Fetch workouts from the API
 	const fetchWorkouts = async () => {
 		setLoading(true);
 		try {
-			const response = await fetch('/api/workouts'); // ✅ Fetching workouts from API
+			const response = await fetch('/api/workouts');
 			if (!response.ok) {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
 
 			const data = await response.json();
-			setWorkouts(data.workouts ?? []); // ✅ Updates state with fetched workouts
+			setWorkouts(data.workouts ?? []);
 		} catch (err) {
 			console.error('Failed to fetch workouts: ', err);
-			setWorkouts([]); // ✅ Prevents crash by setting an empty array
+			setWorkouts([]);
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	// ✅ Ensures `fetchWorkouts` only runs once when the component mounts
 	useEffect(() => {
 		fetchWorkouts();
 	}, []);
 
 	const handleAddWorkout = async (workout: Workout) => {
-		setWorkouts((prevWorkouts) => [...prevWorkouts, workout]); // ✅ Temporarily adds workout to UI for instant feedback
-		await fetchWorkouts(); // ✅ Ensures new workouts are fetched from API
+		setWorkouts((prevWorkouts) => [...prevWorkouts, workout]);
+		await fetchWorkouts();
 	};
 
 	const handleDeleteWorkout = async (id: number) => {
@@ -54,7 +151,7 @@ export default function Dashboard() {
 				throw new Error('Failed to delete workout');
 			}
 
-			await fetchWorkouts(); // ✅ Ensures deleted workouts are removed from UI
+			await fetchWorkouts();
 		} catch (error) {
 			console.error('Error deleting workout: ', error);
 		}
@@ -63,21 +160,26 @@ export default function Dashboard() {
 	return (
 		<div className='p-6 space-y-6'>
 			<h1 className='text-3xl font-bold text-gray-800'>Dashboard</h1>
+
+			<div className='col-span-2'>
+				<ExerciseSearch onSelectExercise={setSelectedExercise} />
+			</div>
+
 			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
 				<DashboardCard
 					title='Total Workouts'
 					value={workouts.length.toString()}
 				/>
-				{/* ✅ Displays total number of workouts */}
 			</div>
-			<WorkoutForm onAddWorkout={handleAddWorkout} />{' '}
-			{/* ✅ Passes function to add new workouts */}
+
+			<WorkoutForm onAddWorkout={handleAddWorkout} />
+
 			<div className='mt-6'>
 				<h3 className='text-lg font-semibold'>Your Workouts</h3>
-				{loading ? ( // ✅ Prevents rendering mismatched HTML before data is ready (fixes hydration issue)
+				{loading ? (
 					<p>Loading workouts...</p>
 				) : workouts.length === 0 ? (
-					<p className='text-gray-500'>No workouts logged yet.</p> // ✅ Handles empty state properly
+					<p className='text-gray-500'>No workouts logged yet.</p>
 				) : (
 					<ul className='space-y-2'>
 						{workouts.map((workout) => (
@@ -91,14 +193,12 @@ export default function Dashboard() {
 										{workout.reps} reps, {workout.sets} sets
 									</p>
 
-									{/* ✅ Show weight if it exists */}
 									{workout.weight && (
 										<p className='text-gray-600'>
 											Weight: {workout.weight} lbs
 										</p>
 									)}
 
-									{/* ✅ Show duration if it exists */}
 									{workout.duration && (
 										<p className='text-gray-600'>
 											Rest Time: {workout.duration} sec
@@ -106,7 +206,7 @@ export default function Dashboard() {
 									)}
 								</div>
 								<button
-									onClick={() => handleDeleteWorkout(workout.id)} // ✅ Calls function to delete workout
+									onClick={() => handleDeleteWorkout(workout.id)}
 									className='text-red-500 hover:text-red-700'
 								>
 									✕
@@ -116,8 +216,8 @@ export default function Dashboard() {
 					</ul>
 				)}
 			</div>
-			<Button text='Logout' onClick={() => console.log('Logout placeholder')} />{' '}
-			{/* ✅ Placeholder until authentication is re-enabled */}
+
+			<Button text='Logout' onClick={() => console.log('Logout placeholder')} />
 		</div>
 	);
 }
