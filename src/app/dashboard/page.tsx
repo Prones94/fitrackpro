@@ -26,7 +26,7 @@ export default function Dashboard() {
       }
 
       const data = await response.json();
-      setWorkouts(data); // ✅ Updates state with fetched workouts
+      setWorkouts(data.workouts ?? []); // ✅ Updates state with fetched workouts
     } catch (err) {
       console.error("Failed to fetch workouts: ", err);
       setWorkouts([]); // ✅ Prevents crash by setting an empty array
