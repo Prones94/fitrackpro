@@ -97,7 +97,7 @@ function ExerciseSearch({ onSelectExercise }: { onSelectExercise: (exerciseName:
 						{filteredExercises.map((exercise) => (
 							<div
 								key={exercise.id}
-								className='p-3 bg-white shadow rounded-lg'
+								className='p-3 bg-white shadow rounded-lg cursor-pointer hover:bg-gray-100'
 								onClick={() => onSelectExercise(exercise.name)}
 							>
 								<strong>{exercise.name}</strong>
@@ -111,12 +111,10 @@ function ExerciseSearch({ onSelectExercise }: { onSelectExercise: (exerciseName:
 }
 
 export default function Dashboard() {
-	// ✅ State for workouts
 	const [workouts, setWorkouts] = useState<Workout[]>([]);
-	const [selectedExercise, setSelectedExercise] = useState('');
+	const [selectedExercise, setSelectedExercise] = useState<string>("");
 	const [loading, setLoading] = useState(true);
 
-	// ✅ Fetch workouts from the API
 	const fetchWorkouts = async () => {
 		setLoading(true);
 		try {
@@ -172,7 +170,7 @@ export default function Dashboard() {
 				/>
 			</div>
 
-			<WorkoutForm onAddWorkout={handleAddWorkout} />
+			<WorkoutForm onAddWorkout={handleAddWorkout} selectedExercise={selectedExercise}/>
 
 			<div className='mt-6'>
 				<h3 className='text-lg font-semibold'>Your Workouts</h3>
