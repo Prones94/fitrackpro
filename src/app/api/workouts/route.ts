@@ -31,20 +31,27 @@ export async function GET() {
 // ✅ POST: Handle adding a new workout
 export async function POST(req: Request) {
   try {
-    const { userId, name, reps, sets, weight, duration } = await req.json();
+    const workout = await req.json();
+    console.log("Received workout data:", workout)
 
-    if (!userId || !name || !reps || !sets) {
-      console.error("❌ Missing required fields:", { userId, name, reps, sets }); // ✅ Better error logging
+    if (!workout.name || workout.reps <= 0 || workout.sets <= 0 || !workout.userId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    await prisma.$connect(); // ✅ Ensures Prisma is connected before inserting data
+    await prisma.$connect();
 
     const newWorkout = await prisma.workout.create({
-      data: { userId, name, reps, sets, weight: weight ?? null, duration: duration ?? null },
+      data: {
+        name: workout.name,
+        reps: workout.reps,
+        sets: workout.sets,
+        weight: workout.weight ?? null,
+        duration: workout.duration ?? null,
+        userId: String(workout.userId)
+      },
     });
 
-    console.log("✅ Workout Added:", newWorkout); // ✅ Debugging log
+    console.log("✅ Workout Added:", newWorkout);
     return NextResponse.json(newWorkout, { status: 201 });
 
   } catch (error) {

@@ -9,11 +9,11 @@ datasource db {
 
 model Workout {
   id        Int      @id @default(autoincrement())
-  userId    String
   name      String
   reps      Int
   sets      Int
   weight    Float?
   duration  Int?
   createdAt DateTime @default(now())
+  userId    String   @default("test-user")
 }

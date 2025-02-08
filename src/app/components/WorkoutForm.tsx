@@ -36,7 +36,6 @@ export default function WorkoutForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ Input validation to prevent empty submissions
     if (!name || reps <= 0 || sets <= 0) {
       setError("Please fill in all required fields.");
       return;
@@ -45,43 +44,43 @@ export default function WorkoutForm({
     setLoading(true);
     setError("");
 
+    const workoutData = {
+      name,
+      reps,
+      sets,
+      weight: weight || 0,
+      duration: duration ||0,
+      userId: "test-user"
+    }
+
+    console.log("Sending workout data: ", workoutData)
+
     try {
       const response = await fetch("/api/workouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          reps,
-          sets,
-          weight,
-          duration,
-        }),
+        body: JSON.stringify(workoutData),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to add workout.");
+        const errorMessage = await response.text()
+        throw new Error(`Server responded with error: ${errorMessage}`);
       }
 
-      // ✅ Extract created workout from API response
       const savedWorkout = await response.json();
 
-      // ✅ Add workout to state after successful API call
       onAddWorkout({
         id: savedWorkout.id ?? Date.now(),
-        name,
-        reps,
-        sets,
-        weight,
-        duration,
+        ...workoutData
       });
 
-      // ✅ Reset form after submission
       setName("");
       setReps(0);
       setSets(0);
       setWeight(undefined);
       setDuration(undefined);
     } catch (err) {
+      console.error("Error saving workout: ", err)
       setError("Error saving workout. Please try again.");
     } finally {
       setLoading(false);
